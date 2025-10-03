@@ -15,7 +15,7 @@ pipeline {
                     try{
                         build job: qaPipeline,
                               parameters: [
-                                string(name: 'BRANCH', value: 'release-QA'),
+                                string(name: 'BRANCH', value: 'ci-pipeline'),
                                 string(name: 'BUILD_NUMBER_PARENT', value: "${BUILD_NUMBER}")
                               ],
                               wait: true
