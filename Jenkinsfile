@@ -7,13 +7,13 @@ pipeline {
     stages {
 
         stage('Trigger CI pipeline') {
-            when {expression {params.ENV_TO_DEPLOY == 'ci-pipeline'}}
-            steps{
-                script{
-                    def qaPipeline = 'Dotnet-project-PROD'
-                    echo "Disparando CI pipeline: ${qaPipeline}"
-                    try{
-                        build job: qaPipeline,
+            when { expression { params.ENV_TO_DEPLOY == 'ci-pipeline' } }
+            steps {
+                script {
+                    def ciPipeline = 'Dotnet-project-CI'
+                    echo "Disparando CI pipeline: ${ciPipeline}"
+                    try {
+                        build job: ciPipeline,
                               parameters: [
                                 string(name: 'BRANCH', value: 'ci-pipeline'),
                                 string(name: 'BUILD_NUMBER_PARENT', value: "${BUILD_NUMBER}")
@@ -21,19 +21,19 @@ pipeline {
                               wait: true
                     } catch (err) {
                         echo "Failed: ${err}"
-                        error "Deteniendo pipeline padre por fallo en QA"
+                        error "Deteniendo pipeline padre por fallo en CI"
                     }
                 }
             }
         }
 
         stage('Deploy to QA') {
-            when {expression {params.ENV_TO_DEPLOY == 'release-QA'}}
-            steps{
-                script{
+            when { expression { params.ENV_TO_DEPLOY == 'release-QA' } }
+            steps {
+                script {
                     def qaPipeline = 'Dotnet-project-QA'
                     echo "Disparando pipeline QA: ${qaPipeline}"
-                    try{
+                    try {
                         build job: qaPipeline,
                               parameters: [
                                 string(name: 'BRANCH', value: 'release-QA'),
@@ -49,12 +49,12 @@ pipeline {
         }
 
         stage('Deploy to PROD') {
-            when {expression {params.ENV_TO_DEPLOY == 'release-PROD' } }
+            when { expression { params.ENV_TO_DEPLOY == 'release-PROD' } }
             steps {
                 script {
                     def prodPipeline = 'Dotnet-project-PROD'
                     echo "Disparando pipeline PROD: ${prodPipeline}"
-                    try{
+                    try {
                         build job: prodPipeline,
                               parameters: [
                                 string(name: 'BRANCH', value: 'release-PROD'),
@@ -63,7 +63,7 @@ pipeline {
                               wait: true
                     } catch (err) {
                         echo "Failed: ${err}"
-                        error "Deteniendo pipeline padre"
+                        error "Deteniendo pipeline padre por fallo en PROD"
                     }
                 }
             }
