@@ -45,10 +45,14 @@ pipeline{
         stage ('Deploying ARM') {
             steps{
                 sh """
+                echo "Verificando si existen los archivos ARM..."
+                ls -la ./ARM
+
                 az deployment group create \
                   --resource-group ${AZURE_RG} \
                   --template-file ${TEMPLATE_FILE} \
-                  --parameters ${QA_PARAMETERS_FILE}
+                  --parameters ${QA_PARAMETERS_FILE} \
+                  -- debug
                 """
             }
         }
