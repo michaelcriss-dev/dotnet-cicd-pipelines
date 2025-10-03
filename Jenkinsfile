@@ -32,6 +32,14 @@ pipeline {
             }
         }
 
+        stage ('APPROVE RELEASE TO PROD'){
+            steps{
+                script{
+                    input message: "¿Aprobar despliegue a PRODUCCIÓN?", ok: "Sí, desplegar"
+                }
+            }
+        }
+        
         stage('Deploy to PROD') {
             steps {
                 script {
