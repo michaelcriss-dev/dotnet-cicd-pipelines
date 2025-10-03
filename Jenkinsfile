@@ -12,7 +12,7 @@ pipeline{
         TEMPLATE_FILE = './ARM/webapp-template.json'
         QA_PARAMETERS_FILE = './ARM/qa-parameters.json'
         NEXUS_DNS          = credentials('nexus-dns-creds')
-        AZURE_RG           = credentials('azure-reg-creds')
+        AZURE_RG           = 'rg-webapp'
 
     }
     stages{
