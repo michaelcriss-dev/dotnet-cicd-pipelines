@@ -10,7 +10,7 @@ pipeline {
             when {expression {params.ENV_TO_DEPLOY == 'ci-pipeline'}}
             steps{
                 script{
-                    def qaPipeline = 'donet-project-ci'
+                    def qaPipeline = 'Dotnet-project-PROD'
                     echo "Disparando CI pipeline: ${qaPipeline}"
                     try{
                         build job: qaPipeline,
