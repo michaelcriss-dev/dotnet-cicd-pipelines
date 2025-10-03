@@ -1,0 +1,7 @@
+{
+    "parameters": {
+        "planName": { "value": "plan-service829384892"},
+        "appName": { "value": "dotnet-app-24242342"},
+        "location": { "value": "Canada Central"}
+    }
+}
