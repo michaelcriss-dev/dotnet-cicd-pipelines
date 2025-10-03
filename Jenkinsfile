@@ -48,7 +48,8 @@ pipeline{
                 az deployment group create \
                   --resource-group ${AZURE_RG} \
                   --template-file ${TEMPLATE_FILE} \
-                  --parameters ${PROD_PARAMETERS_FILE}
+                  --parameters ${PROD_PARAMETERS_FILE} \
+                  --debug
                 """
             }
         }
