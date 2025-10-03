@@ -1,71 +1,65 @@
-pipeline {
+pipeline{
     agent any
-    parameters {
-        choice(name: 'ENV_TO_DEPLOY', choices: ['ci-pipeline', 'release-QA', 'release-PROD'], description: 'Branch del pipeline hijo a ejecutar')
+    environment{
+        PROJECT_DIR        = 'src/FullstackApp'
+        PROJECT            = 'FullstackApp.csproj'
+        CONFIGURATION      = 'Release'
+        PUBLISH_DIR        = 'publish'
+        ARTIFACT           = "FullstackApp-${BUILD_NUMBER}.zip"
+        SONAR_PROJECT_KEY  = 'devops-project'
+        SONAR_PROJECT_NAME = 'DevOps FullstackApp'
+        AZURE_APP_NAME_PROD = 'dotnet-app-49284920'
+        TEMPLATE_FILE = './ARM/webapp-template.json'
+        PROD_PARAMETERS_FILE = './ARM/prod-parameters.json'
+        NEXUS_DNS          = credentials('nexus-dns-creds')
+        AZURE_RG           = credentials('azure-reg-creds')
+
     }
-    
-    stages {
-
-        stage('Trigger CI pipeline') {
-            when {expression {params.ENV_TO_DEPLOY == 'ci-pipeline'}}
+    stages{
+        stage('Download Artifact') {
             steps{
-                script{
-                    def qaPipeline = 'donet-project-ci'
-                    echo "Disparando CI pipeline: ${qaPipeline}"
-                    try{
-                        build job: qaPipeline,
-                              parameters: [
-                                string(name: 'BRANCH', value: 'release-QA'),
-                                string(name: 'BUILD_NUMBER_PARENT', value: "${BUILD_NUMBER}")
-                              ],
-                              wait: true
-                    } catch (err) {
-                        echo "Failed: ${err}"
-                        error "Deteniendo pipeline padre por fallo en QA"
-                    }
+                withCredentials([usernamePassword(credentialsId: 'nexuslogin', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh """
+                    curl -u $USER:$PASS -O \
+                    http://${NEXUS_DNS}/repository/dotnet-releases/com/babel/dotnet/FullstackApp/${BUILD_NUMBER}/FullstackApp-${BUILD_NUMBER}.zip
+
+                    """
                 }
             }
         }
 
-        stage('Deploy to QA') {
-            when {expression {params.ENV_TO_DEPLOY == 'release-QA'}}
+        stage('Login to Azure'){
             steps{
-                script{
-                    def qaPipeline = 'Dotnet-project-QA'
-                    echo "Disparando pipeline QA: ${qaPipeline}"
-                    try{
-                        build job: qaPipeline,
-                              parameters: [
-                                string(name: 'BRANCH', value: 'release-QA'),
-                                string(name: 'BUILD_NUMBER_PARENT', value: "${BUILD_NUMBER}")
-                              ],
-                              wait: true
-                    } catch (err) {
-                        echo "Failed: ${err}"
-                        error "Deteniendo pipeline padre por fallo en QA"
-                    }
+                withCredentials([azureServicePrincipal('az-creds')]){
+                    sh '''
+                       az login --service-principal \
+                         -u $AZURE_CLIENT_ID \
+                         -p $AZURE_CLIENT_SECRET \
+                         --tenant $AZURE_TENANT_ID
+                       az account set --subscription $AZURE_SUBSCRIPTION_ID
+                    '''
                 }
             }
         }
 
-        stage('Deploy to PROD') {
-            when {expression {params.ENV_TO_DEPLOY == 'release-PROD' } }
-            steps {
-                script {
-                    def prodPipeline = 'Dotnet-project-PROD'
-                    echo "Disparando pipeline PROD: ${prodPipeline}"
-                    try{
-                        build job: prodPipeline,
-                              parameters: [
-                                string(name: 'BRANCH', value: 'release-PROD'),
-                                string(name: 'BUILD_NUMBER_PARENT', value: "${BUILD_NUMBER}")
-                              ],
-                              wait: true
-                    } catch (err) {
-                        echo "Failed: ${err}"
-                        error "Deteniendo pipeline padre"
-                    }
-                }
+        stage ('Deploying ARM') {
+            steps{
+                sh """
+                az deployment group create \
+                  --resource-group ${AZURE_RG} \
+                  --template-file ${TEMPLATE_FILE} \
+                  --parameters ${PROD_PARAMETERS_FILE}
+                """
+            }
+        }
+        stage('Deploy to PROD'){
+            steps{
+                sh """
+                az webapp deployment source config-zip \
+                  --resource-group ${AZURE_RG} \
+                  --name ${AZURE_APP_NAME_PROD} \
+                  --src ${ARTIFACT}
+                """
             }
         }
     }
