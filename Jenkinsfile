@@ -52,7 +52,7 @@ pipeline{
                   --resource-group ${AZURE_RG} \
                   --template-file ${TEMPLATE_FILE} \
                   --parameters ${QA_PARAMETERS_FILE} \
-                  -- debug
+                  --debug
                 """
             }
         }
